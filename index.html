@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  body {
+    font: 10px sans-serif;
+    background-color: white;
+  }
+
+  #files {
+    max-height: 600px;
+    overflow-y: scroll;
+    min-height: 600px;
+  }
+
+  .label {
+    font: 16px bold sans-serif;
+  }
+
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  .bar {
+    fill: steelblue;
+  }
+
+  .bar:hover {
+    fill: orangered;
+  }
+
+  .x.axis path {
+    display: none;
+  }
+
+  .d3-tip {
+    line-height: 1;
+    font-weight: bold;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    border-radius: 2px;
+  }
+
+  /* Creates a small triangle extender for the tooltip */
+  .d3-tip:after {
+    box-sizing: border-box;
+    display: inline;
+    font-size: 10px;
+    width: 100%;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.8);
+    content: "\25BC";
+    position: absolute;
+    text-align: center;
+  }
+
+  /* Style northward tooltips differently */
+  .d3-tip.n:after {
+    margin: -1px 0 0 0;
+    top: 100%;
+    left: 0;
+  }
+
+  /* classes modified from http://jsfiddle.net/c6242/1/ */
+  .parent-container {
+    width: 100%;
+    /*border:1px solid red;*/
+    float: left;
+  }
+
+  .child-container {
+    /*border:1px solid blue;*/
+    float: left;
+  }
+</style>
+
+<body>
+  <!-- <div style="margin:0 auto; text-align:center;" class="search-span">
+    <input id="searchbox" type="search" placeholder="Find a file (accepts regexes i.e. \.sh$)"
+      style="-webkit-appearance:none; height:30px; width:500px; font-size:17px" />
+  </div> -->
+  <div class="parent-container">
+    <div id="content" class="child-container" style="width: 80%;"></div>
+    <div class="child-container" style="width: 19%;">
+      <h3>Files for selected time period</h3>
+      <p id="files">click on a bar to list the files for that bin</p>
+    </div>
+  </div>
+
+  <script src="//d3js.org/d3.v5.min.js" charset="utf-8"></script>
+
+  <script>
+    // Like most things I write, this is heavily inspired by Santiago Torres-Arias.
+    // https://github.com/SantiagoTorres/SantiagoTorres.github.io/blob/master/blob_lifecycles/index.html
+
+    var w = document.getElementById('content').offsetWidth;
+    var margin = { top: 20, right: 20, bottom: 20, left: 100 },
+      width = w - margin.left - margin.right,
+      height = 600 - margin.top - margin.bottom;
+
+    var svg = d3.select("#content").insert("svg", before = ":first-child")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    dataset = location.search.split("?dataset=")[1];
+
+    if (dataset == undefined) {
+      dataset = "in-toto.json";
+    }
+
+    dataset = "data/result-" + dataset;
+
+    var transpose = array => array[0].map((col, i) => array.map(row => row[i]));
+
+    var data = [];
+    var bin;
+
+    d3.json(dataset).then(function (d) {
+      var vals = d3.values(d);
+
+      var start = d3.min(transpose(vals)[1]);
+
+      for (var element in d) {
+        data.push({
+          path: element,
+          relATime: d[element][1] - start
+        });
+      }
+
+      vals = transpose(vals)[1].map(function (x) {
+        return (x - start);
+      });
+
+      var x = d3.scaleLinear().domain(d3.extent(vals)).nice()
+        .range([margin.left, width - margin.right]);
+
+      var histogram = d3.histogram()
+        .domain(x.domain())
+        .thresholds(x.ticks(40));
+
+      bins = histogram(vals);
+
+      var y = d3.scaleLinear().domain([0, d3.max(bins, d => d.length)]).nice()
+        .range([height - margin.bottom, margin.top]);
+
+      var xAxis = g => g
+        .attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
+        .call(g => g.append("text")
+          .attr("x", width - margin.right)
+          .attr("y", -4)
+          .attr("fill", "currentColor")
+          .attr("font-weight", "bold")
+          .attr("text-anchor", "end")
+          .text(vals.x))
+
+      var yAxis = g => g
+        .attr("transform", `translate(${margin.left}, 0)`)
+        .call(d3.axisLeft(y).ticks(height / 40))
+        .call(g => g.select(".domain").remove())
+        .call(g => g.select(".tick:last-of-type text").clone()
+          .attr("x", 4)
+          .attr("text-anchor", "start")
+          .attr("font-weight", "bold")
+          .text(vals.y));
+
+
+      var showFiles = function(e) {
+        var files = []
+        for (var i in data) {
+          if (data[i].relATime >= e.x0 && data[i].relATime < e.x1) {
+            files.push(data[i].path);
+          }
+        }
+        if (files.length == 0) {
+          files.push("no files :(");
+        }
+        document.getElementById("files").innerHTML = files.sort().join("<br>");
+      }
+
+      var highlightBars = function(e) {
+        svg.selectAll("rect").style("fill", "steelblue");
+        var highlightBins = []
+        var text = new RegExp(document.getElementById("searchbox").value);
+        for (var i in data) {
+          if (text.test(data[i].path)) {
+            highlightBins.push(Math.floor(data[1].relATime / (bins[0].x1 - bins[0].x0)));
+          }
+        }
+        svg.selectAll(".bar").filter(function(f, i, nodes) {
+          if (highlightBins.includes(i)) {
+            return true;
+          }
+        }).style("fill", "green");
+      }
+
+      svg.selectAll("rect")
+        .data(bins)
+        .enter().append("rect")
+        .attr("class", "bar")
+        .attr("x", d => x(d.x0) + 1)
+        .attr("width", d => d3.max([0, x(d.x1) - x(d.x0) - 1]))
+        .attr("y", d => y(d.length))
+        .attr("height", d => y(0) - y(d.length))
+        .on("click", showFiles);
+
+      svg.append("g").call(xAxis);
+
+      svg.append("g").call(yAxis);
+
+      d3.select("#searchbox").on("keyup", highlightBars);
+    });
+
+  </script>
+</body>
+
+</html>
