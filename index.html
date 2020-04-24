@@ -170,7 +170,7 @@
           .text(vals.y));
 
 
-      var showFiles = function(e) {
+      var showFiles = function (e) {
         var files = []
         for (var i in data) {
           if (data[i].relATime >= e.x0 && data[i].relATime < e.x1) {
@@ -183,20 +183,23 @@
         document.getElementById("files").innerHTML = files.sort().join("<br>");
       }
 
-      var highlightBars = function(e) {
+      var highlightBars = function (e) {
         svg.selectAll("rect").style("fill", "steelblue");
         var highlightBins = []
-        var text = new RegExp(document.getElementById("searchbox").value);
-        for (var i in data) {
-          if (text.test(data[i].path)) {
-            highlightBins.push(Math.floor(data[i].relATime / (bins[0].x1 - bins[0].x0)));
+        var text = document.getElementById("searchbox").value;
+        if (text.length > 0) {
+          text = new RegExp(text);
+          for (var i in data) {
+            if (text.test(data[i].path)) {
+              highlightBins.push(Math.floor(data[i].relATime / (bins[0].x1 - bins[0].x0)));
+            }
           }
+          svg.selectAll(".bar").filter(function (f, i, nodes) {
+            if (highlightBins.includes(i)) {
+              return true;
+            }
+          }).style("fill", "green");
         }
-        svg.selectAll(".bar").filter(function(f, i, nodes) {
-          if (highlightBins.includes(i)) {
-            return true;
-          }
-        }).style("fill", "green");
       }
 
       svg.selectAll("rect")
