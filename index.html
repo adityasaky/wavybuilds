@@ -113,7 +113,8 @@
     stage = url.searchParams.get("stage");
 
     if (dataset == undefined) {
-      dataset = "in-toto";
+      dataset = "test-go";
+      stage = "build"; // assuming that the URL doesn't include only a stage...
     } else if (dataset.includes(".json")) {
       dataset = dataset.split(".json")[0];
     }
