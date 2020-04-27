@@ -124,7 +124,8 @@
       dataset = "data/" + dataset + "-" + stage + ".json";
     }
 
-    d3.select("#title").insert("h1").text("Displaying " + dataset.split("data/")[1]);
+    d3.select("#title").append("titleObject")
+      .html("<h1>Displaying <a href='/" + dataset + "'>" + dataset.split("data/")[1] + "</a></h1>");
 
     var transpose = array => array[0].map((col, i) => array.map(row => row[i]));
 
