@@ -225,18 +225,19 @@
 
       svg.append("g").call(xAxis);
 
-      // svg.call(g => g.append("text")
-      //     .attr("y", 100)
-      //     .text("Time"));
+      svg.call(g => g.append("text")
+          .attr("y", height + 20)
+          .attr("x", width / 2)
+          .text("Time (s)"));
 
       svg.append("g").call(yAxis);
 
-      // svg.call(g => g.append("text")
-      //     .attr("transform", "rotate(-90)")
-      //     .attr("y", 50)
-      //     .attr("dy", "10")
-      //     .style("text-anchor", "end")
-      //     .text("Count"));
+      svg.call(g => g.append("text")
+          .attr("y", height / 2)
+          .attr("x", 30)
+          .attr("dy", "10")
+          .style("text-anchor", "end")
+          .text("Count"));
 
       d3.select("#searchbox").on("keyup", highlightBars);
     });
