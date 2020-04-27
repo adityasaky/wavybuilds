@@ -83,6 +83,7 @@
       style="-webkit-appearance:none; height:30px; width:500px; font-size:17px" />
   </div>
   <div class="parent-container">
+    <div id="title" class="child-container" style="text-align: center; width: 80%;"></div>
     <div id="content" class="child-container" style="width: 80%;"></div>
     <div class="child-container" style="width: 19%;">
       <h3>Files for selected time period</h3>
@@ -118,10 +119,12 @@
     }
 
     if (stage == undefined) {
-      dataset = "data/result-" + dataset + ".json";
+      dataset = "data/" + dataset + ".json";
     } else {
-      dataset = "data/result-" + dataset + "-" + stage + ".json";
+      dataset = "data/" + dataset + "-" + stage + ".json";
     }
+
+    d3.select("#title").insert("h1").text("Displaying " + dataset.split("data/")[1]);
 
     var transpose = array => array[0].map((col, i) => array.map(row => row[i]));
 
