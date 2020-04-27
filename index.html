@@ -107,13 +107,21 @@
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    dataset = location.search.split("?dataset=")[1];
+    url = new URL(location);
+    dataset = url.searchParams.get("dataset");
+    stage = url.searchParams.get("stage");
 
     if (dataset == undefined) {
-      dataset = "in-toto.json";
+      dataset = "in-toto";
+    } else if (dataset.includes(".json")) {
+      dataset = dataset.split(".json")[0];
     }
 
-    dataset = "data/result-" + dataset;
+    if (stage == undefined) {
+      dataset = "data/result-" + dataset + ".json";
+    } else {
+      dataset = "data/result-" + dataset + "-" + stage + ".json";
+    }
 
     var transpose = array => array[0].map((col, i) => array.map(row => row[i]));
 
