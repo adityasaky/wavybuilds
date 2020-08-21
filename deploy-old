@@ -1,0 +1,1 @@
+rsync -r --info=progress2 --exclude='deploy' ./ saky-droplet:/var/www/wavybuilds/public_html/
